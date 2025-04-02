@@ -32,4 +32,5 @@ Market Analysis Report
   Data Analysis
   Data Storytelling
   Marketing and Financial Reporting
-  
+
+  Project Credited to Ali Ahmad
