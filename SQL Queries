@@ -1,0 +1,160 @@
+--Below are the different queries used to create the tables used in Power BI--
+--All queries are made using Microsft SQL Server (SSMS)--
+
+
+
+-- BUILDING OUR PRODUCTS TABLE --
+--Query to give us an overview of our products table.
+SELECT *
+FROM products;
+
+--We removed the general "Category" column because all of our products were sports and it felt redundant to leave in our table
+--We added a new column to describe high, medium, and low prices on products called "Price_Category" to give an easy way to categorize our products
+
+SELECT ProductID, ProductName, Price,
+	CASE
+		WHEN Price < 50 THEN 'Low'
+		WHEN Price between 50 and 200 THEN 'Medium'
+		WHEN Price > 200 THEN 'High'
+	END AS Price_Category
+FROM products;
+
+
+
+-- BUILDING OUR CUSTOMER ENGAGEMENT TABLE --
+--Query to give us an overview on our Customer Engagement table
+SELECT *
+FROM engagement_data;
+
+--We want to clean this table to make analysis on it easier.
+
+SELECT
+	EngagementID, -- selects the column with no changes
+	ContentID, -- selects the column with no changes
+	CampaignID, -- selects the column with no changes
+	ProductID, -- selects the column with no changes
+	UPPER(REPLACE(ContentType, 'Socialmedia', 'Social Media')) AS ContentType, -- We capitalized all of the values and standardized the text
+ -- We split the ViewsClicksCombined colums
+	LEFT(ViewsClicksCombined, CHARINDEX('-', ViewsClicksCombined) - 1) AS Views, --Extracted the Views by keeping all values left of the "-"
+	RIGHT(ViewsClicksCombined, LEN(ViewsClicksCombined) - CHARINDEX('-', ViewsClicksCombined)) AS Clicks, --Extracted the clicks by keeping all values after the "-"
+	Likes, -- selects the column with no changes
+	FORMAT(CONVERT(DATE, EngagementDate), 'MM.dd.yy') AS EngagementDate -- Formatted the date to be all one standard (month, day, year in this case)
+FROM
+	engagement_data
+WHERE
+	ContentType != 'Newsletter'; -- Removed the "Newsletter" column because it's not useful for our analysis
+
+
+
+-- BUILDING OUR CUSTOMER REVIEWS TABLE -- 
+--Query to give us an overview on our Customer Reviews table
+SELECT *
+FROM customer_reviews;
+
+--We want to make sure we standardize the column "ReviewText". People have used either double or single spacing and that could have an impact on our analysis.
+--This query cleans our data by taking the extra spaces and makes them single space only.
+SELECT
+	ReviewID,
+	CustomerID,
+	ProductID,
+	ReviewDate,
+	Rating,
+	REPLACE(ReviewText, '  ', ' ') AS ReviewText
+FROM
+	customer_reviews;
+
+
+
+-- BUILDING OUR CUSTOMER JOURNEY'S TABLE (later used as customer actions) -- 
+--Query to give us an overview on our Customer Reviews table
+SELECT *
+FROM customer_journey;
+
+--We use a CTE to identify and tag duplicate records.
+--This is called a verification query to let us know there if there is duplicate data or not.
+
+WITH DuplicateRecords AS (
+	SELECT
+		JourneyID, -- Selects the unique identifier for each journey for data traceability
+		CustomerID, -- Selects the unique identifier for each customer to link journeys to specific customers
+		ProductID, -- Selects the unique identifier for each product to analyze customer interactions with different products
+		VisitDate, -- Selects the date of each visit to understand the timeline of customer interactions
+		Stage, -- Uses the uppercased stage value from the subquery for consistency in analysis
+		Action, -- Selects the action taken by the customer (click, view, purchase, so on)
+		Duration, -- Time spent visiting
+		--We use ROW_NUMBER() to assign a unique row number to each record within the partition defined below
+		ROW_NUMBER() OVER (
+			--PARTITION BY groups the rows based on the specified columns that should be unique
+			PARTITION BY CustomerID, ProductID, VisitDate, Stage, Action
+			ORDER BY JourneyID
+		) AS row_num -- Creates the new column "row_num" that numbers each row within its partition
+	FROM 
+		customer_journey --Specifies the sourche table from which to select our data
+)
+
+SELECT *
+FROM DuplicateRecords
+WHERE row_num > 1 
+ORDER BY JourneyID;
+
+--This query creates the table in which we are going to add to PowerBI later.
+--Query used to clean our data to remove the duplicate data and average the duration spent per date to remove our null values
+
+	SELECT
+		JourneyID, -- Selects the unique identifier for each journey for data traceability
+		CustomerID, -- Selects the unique identifier for each customer to link journeys to specific customers
+		ProductID, -- Selects the unique identifier for each product to analyze customer interactions with different products
+		VisitDate, -- Selects the date of each visit to understand the timeline of customer interactions
+		Stage, -- Uses the uppercased stage value from the subquery for consistency in analysis
+		Action, -- Selects the action taken by the customer (click, view, purchase, so on)
+		COALESCE(Duration, avg_duration) AS Duration -- Replaces missing durations (NULL) as average duration for the corresponding visit date
+	FROM
+		(
+		--SubQuery to process and clean the data
+			SELECT
+				JourneyID, -- Selects the unique identifier for each journey for data traceability
+				CustomerID, -- Selects the unique identifier for each customer to link journeys to specific customers
+				ProductID, -- Selects the unique identifier for each product to analyze customer interactions with different products
+				VisitDate, -- Selects the date of each visit to understand the timeline of customer interactions
+				UPPER(Stage) AS Stage, -- Converts Stage values to uppcase for fconsistency in data analysis
+				Action, -- Selects the action taken by the customer (click, view, purchase, so on)
+				Duration, -- Time spent visiting
+				AVG(Duration) OVER (PARTITION BY VisitDate) AS avg_duration, -- Calculates the average duration for each date
+				ROW_NUMBER() OVER (
+					PARTITION BY CustomerID, ProductID, VisitDate, UPPER(Stage), Action --PARTITION BY groups the rows based on the specified columns that should be unique
+					ORDER BY JourneyID --Orders by JourneyID to keep the first occurrence of each duplicate
+			) AS row_num -- Assigns a row number to each row ithin the partition to identify duplicates
+		FROM
+			customer_journey -- Specifies the source table from which to select the data
+	) AS subquery -- Names the subquery for refrence in the outer query
+WHERE
+	row_num = 1; -- Keeps Only the first occurrence of each duplicate group identified in the subquery
+
+
+
+-- BUILDING OUR CUSTOMER DEMOGRAPHICS TABLE --
+--Query to give us an overview of our customers table.
+SELECT *
+FROM customers;
+
+--Query to give us an overview of our geography table.
+SELECT *
+FROM geography;
+
+--Looking at the two tables we have a column that shares a relationship between the two: "GeographyID".
+--We want to combine the two tables and use a join on that related column.
+
+SELECT
+	c.CustomerID,
+	c.CustomerName,
+	c.Email,
+	c.Gender,
+	c.Age,
+	g.Country,
+	g.City
+FROM
+	customers as c
+LEFT JOIN
+	geography as g
+ON
+	c.GeographyID = g.GeographyID;
