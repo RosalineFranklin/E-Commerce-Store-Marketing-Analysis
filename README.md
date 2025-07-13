@@ -1,34 +1,35 @@
-This end to end project started with the problem: Shop Easy, the online retailer, has been losing client engagement in 3 ways: social media, site views to conversions, and through their reviews.
+Overview:
+ - Full-stack portfolio project analyzing customer sentiment and purchasing behavior.
+ - Combined SQL, Python (NLP), and dashboards to derive insights and drive business recommendations.
 
-The database with my initial tables were from the marketing and research team.
+Objectives:
+ - Analyze customer sentiment using text reviews and ratings.
+ - Cross-reference NLP sentiment scores with star ratings to detect mismatches.
+ - Segment feedback into actionable categories.
+ - Deliver dashboards and executive summaries to stakeholders.
 
-Attached in this project:
-  The SQL Queries I made
-  My script for the sentiment analysis I made with python
-  The output CSV adding sentiment score, sentiment category, and sentiment buckets for use in Power BI
-  Screencaps of the dashboard and data model I made using Microsoft Power BI
-  The market analysis report showing my findings
+Tools & Technologies:
+ - SQL Server (Microsoft SQL Server): data extraction from customer_reviews table.
+ - Python (Pandas, NLTK, VADER): sentiment analysis and feature engineering.
+ - Power BI & Excel: dashboard visuals and reporting.
+ - pyodbc: SQL connection to Python.
+ - SPSS & Qualtrics: survey/statistical support (from prior research experience).
 
-Skills Measured in this project.
+Project Components:
+ - Queried SQL database for review and rating data.
+ - Used VADER (from NLTK) to calculate compound sentiment scores.
+ - Engineered new columns: SentimentScore, SentimentCategory, SentimentBucket.
+ - Output enriched review dataset: fact_customer_reviews_with_sentiment.csv.
 
-SQL:
-  CTE
-  Joins
-  Data Cleaning
-  Light Analysis
+Deliverables:
+ - Python script for sentiment scoring.
+ - Power BI & Excel dashboards showing sentiment trends by product and review mix.
+ - PowerPoint: Market Analysis Presentation.pptx for stakeholders.
+ - Full narrative: Shop Easy Market Analysis Report.docx.
+ - Dashboard and data model screenshots.
+ - SQL Query documentation for all ETL steps.
 
-Python:
-  Pandas
-  Sentiment Analysis
-
-Power BI
-  DAX
-  Data Modeling
-  Dashboard Creating
-  Calculating Variable Based Measurements
-  Data Analytics and Finding Insights
-
-Market Analysis Report
-  Data Analysis
-  Data Storytelling
-  Marketing and Financial Reporting
+Key Insights:
+ - Identified 12% of reviews where text sentiment contradicted star rating (valuable for QA).
+ - Positive sentiment most strongly tied to delivery speed and service responsiveness.
+ - Suggested product and marketing enhancements based on sentiment segmentation.
